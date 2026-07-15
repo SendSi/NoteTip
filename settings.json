@@ -1,0 +1,90 @@
+{
+    "files.exclude": {
+        "*./meta": true,
+        "*.csproj": true,
+        "**/.DS_Store": true,
+        "**/.git": true,
+        "**/*.meta": true,
+        "**/node_modules": true,
+        "*/Library/*": true,
+        "library/": true,
+        "local/": true,
+        "temp/": true
+    },
+    "workbench.colorTheme": "Light Modern",
+    "workbench.editor.enablePreview": false,
+    "window.commandCenter": true,
+    "editor.fontLigatures": true,
+    "editor.unicodeHighlight.invisibleCharacters": false,
+    "editor.unicodeHighlight.allowedCharacters": {
+        " ": true
+    },
+    "editor.fontFamily": "'Cascadia Code',Consolas, 'Courier New', monospace",
+    "[cpp]": {
+        "editor.defaultFormatter": "xaver.clang-format"
+    },
+    "extensions.ignoreRecommendations": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "fittencode.languagePreference.displayPreference": "zh-cn",
+    "fittencode.languagePreference.commentPreference": "zh-cn",
+    "fittencode.inlineCompletion.enable": true,
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 3000,
+    "security.workspace.trust.untrustedFiles": "open",
+    "git.openRepositoryInParentFolders": "always",
+    "security.workspace.trust.banner": "always",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "claudeCode.preferredLocation": "panel",
+    "workbench.editor.wrapTabs": true,
+    "explorer.excludeGitIgnore": true,
+    "resharper.region.region": "China",
+    "resharper.dataSharing.allowDataSharing": false,
+    "editor.minimap.enabled": false,
+    "codingcopilot.enableCodelens": false,
+    "folder-color.pathColors": [
+        {
+            "folderPath": "Server",
+            "color": "#ff4444", // 红色
+            "isFolderOnly": true
+        },
+        {
+            "folderPath": "Client",
+            "color": "#44ff44", // 绿色
+            "isFolderOnly": true
+        }
+    ],
+    "git.blame.editorDecoration.enabled": true,
+    "git.blame.editorDecoration.template": "${subject}, ${authorName} (${authorDate})",
+    "git.blame.ignoreWhitespace": true,
+    "git.blame.statusBarItem.template": "${authorName} (${authorDate})",
+    "files.eol": "\r\n",
+    "explorer.confirmDragAndDrop": false,
+    "tabsColor.byDirectory": {
+       
+        "\\Server\\": {
+            "backgroundColor": "white",
+            "fontColor": "red"
+        },
+
+        "\\Editor\\": {
+            "backgroundColor": "white",
+            "fontColor": "blue"
+        },  
+
+        "\\Message\\": {
+            "backgroundColor": "white",
+            "fontColor": "orange"
+        },
+
+        "\\Client\\": {
+            "backgroundColor": "white",
+            "fontColor": "green"
+        },    
+         "\\Library\\": {
+            "backgroundColor": "red",
+            "fontColor": "blue"
+        },       
+    },
+}
