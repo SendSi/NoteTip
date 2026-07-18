@@ -68,8 +68,8 @@
     "SetXX": {
         "prefix": "SetXX",
         "body": [
-            "/// <summary>     CS赋值</summary>",
-            "public static void Set${1:MethodName}(this ${2:ComponentClass} self, ${3:paramType} ${1:MethodName})",
+            "/// <summary> CS赋值 </summary>",
+            "public static void Set${1:MethodName}(this ${TM_FILENAME_BASE/(System)$//} self, bool ${1:MethodName})",
             "{",
             "    self.${1:MethodName} = ${1:MethodName};",
             "}"
@@ -317,22 +317,53 @@
         "prefix": "serverEntitySQL",
         "description": "ET通用占位方法",
         "body": [
-            "/// <summary>占位  </summary>",
-            "public static int GetItem(this ${TM_FILENAME_BASE/(System)$//} self)",
-            "{",
-            "    return 0;",
-            "}",
-            "/// <summary>占位 得到proto内容  </summary>",
-            "public static void Get_Infos(this ${TM_FILENAME_BASE/(System)$//} self)",
-            "{",
-            "}",
-            "public static void Modify_(this ${TM_FILENAME_BASE/(System)$//} self)",
-            "{",
-            "}",
-            "/// <summary> 占位  </summary>",
+            "/// <summary> 更新数据至数据库  </summary>",
             "private static void UpdateToDB(this ${TM_FILENAME_BASE/(System)$//} self)",
             "{",
             "    EventSystem.Instance.Publish(self.DomainScene(), new SaveDataToDB() { Entity = self });",
+            "}""/// <summary>占位 得到proto内容  </summary>",
+            "public static void Get_Infos(this ${TM_FILENAME_BASE/(System)$//} self)",
+            "{",
+            "}",
+            "/// <summary>修改逻辑  </summary>",
+            "public static void Modify_(this ${TM_FILENAME_BASE/(System)$//} self)",
+            "{",
+            "}",
+            "/// <summary>占位0  </summary>",
+            "public static int Get0(this ${TM_FILENAME_BASE/(System)$//} self)",
+            "{",
+            "    return 0;",
+            "}",
+            "/// <summary>占位void  </summary>",
+            "public static void GetVoid(this ${TM_FILENAME_BASE/(System)$//} self)",
+            "{",
+            "}",
+        ]
+    },
+    "serverReqInfos": {
+        "prefix": "serverReqInfos",
+        "description": "请求个人列表",
+        "body": [
+            "var _compons = unit.DomainScene().GetComponent<$A>();//得到实体后 在实体里操作数据",
+            "var _entity = await _compons.Get_Entity(accountId);//Get_Entity实体方法",
+            "response.$B = _entity.Get_Infos();"
+        ]
+    },
+    "scroll_item_system": {
+        "prefix": "scroll_item_system",
+        "description": "列表item",
+        "body": [
+            "using UnityEngine.UI;",
+            "using UnityEngine;",
+            "namespace ET.Client",
+            "{",
+            "    [FriendOf(typeof(Scroll_${TM_FILENAME_BASE/(System)$//}))]",
+            "    public static class ${TM_FILENAME_BASE}",
+            "    {",
+            "        public static void SetInfo(this Scroll_${TM_FILENAME_BASE/(System)$//} self)",
+            "        {",
+            "        }       ",
+            "    }",
             "}"
         ]
     }

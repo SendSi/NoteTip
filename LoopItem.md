@@ -1,8 +1,8 @@
 创建脚本 SItemCodeSpawner.cs 与LoopScrollItemCodeSpawner.cs同一目录下  代码中就是新加个SItem目录
 
 ```
-
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -66,6 +66,20 @@ public partial class UICodeSpawner
             System.IO.Directory.CreateDirectory(strFilePath);
         }
         strFilePath = Application.dataPath + $"{CodeRootPath}/ModelView/{UIRootFolder}//UIBehaviour/SItem/" + strDlgName + ".cs";
+
+        // 尝试从旧文件中提取自定义内容
+        string customContent = "";
+        if (File.Exists(strFilePath))
+        {
+            string oldContent = File.ReadAllText(strFilePath, Encoding.UTF8);
+            Match match = Regex.Match(oldContent, @"#region\s+自定义内容[^\n]*\n(?<content>.*?)\n\s*#endregion", RegexOptions.Singleline);
+            if (match.Success)
+            {
+                // trim 掉末尾换行符，避免 Windows \r\n 换行导致 content 末尾残留 \r，二次生成时正则匹配失败
+                customContent = match.Groups["content"].Value.TrimEnd('\r', '\n');
+            }
+        }
+
         StreamWriter sw = new StreamWriter(strFilePath, false, Encoding.UTF8);
         StringBuilder strBuilder = new StringBuilder();
         strBuilder.AppendLine()
@@ -92,6 +106,13 @@ public partial class UICodeSpawner
         CreateDestroyWidgetCode(ref strBuilder, true);
         CreateDeclareCode(ref strBuilder);
         strBuilder.AppendLine("\t\tpublic Transform uiTransform = null;");
+        strBuilder.AppendLine("\t\t#region 自定义内容");
+        if (!string.IsNullOrEmpty(customContent))
+        {
+            // 保留原有的自定义内容（使用 AppendLine 保证末尾有换行，避免与 #endregion 粘连）
+            strBuilder.AppendLine(customContent);
+        }
+        strBuilder.AppendLine("\t\t#endregion");
         strBuilder.AppendLine("\t}");
         strBuilder.AppendLine("}");
         sw.Write(strBuilder);
