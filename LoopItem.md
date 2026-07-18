@@ -121,3 +121,51 @@ private const string UISItemPrefix = "SItem";//LoopScollItem//最后加句
 
 prefab是以SItem开头  生成代码
 UnityEditor里 搜索ItemPrefabs 加入新的文件夹SItem
+
+示例
+名字为 SItem_MailInfo   (水平的)
+- 在目标prefab里,右键EUI/LoopHorizontalScrollRect...创建出来,看属性面板填入PrefabName
+- 新建的SItem_MailInfo.prefab 这个SItem里要加个组件LayoutElement,使用PreferredWidth选项,右键SpawnEUICode,生成代码
+- 页面脚本里
+```
+view里     
+    public Dictionary<int, Scroll_SItem_MailInfo> itemMailDic = new();
+System里在RegisterUIEvent方法里加入代码
+    self.View.ELoopSL_MailLoopHorizontalScrollRect.AddItemRefreshListener((Transform trans, int idx) =>{    self.OnLoopMailHandler(trans, idx);});
+        方法
+    public static void OnLoopMailHandler(this DlgOperateDialog self, Transform transform, int idx)
+    {
+        var item = self.itemMailDic[idx].BindTrans(transform);
+        // item.E_titleText.text = "邮件" + idx;
+        item.SetMainInfo(idx);
+    }
+    ShowWindow方法里 数据处理
+    public static void ShowWindow(this DlgOperateDialog self, Entity contextData = null)
+    {
+        self.AddUIScrollItems(ref self.itemMailDic, 50);
+        self.View.ELoopSL_MailLoopHorizontalScrollRect.SetVisible(true, 50);
+    }
+    HideWindow方法里 数据移除
+    public static void HideWindow(this DlgOperateDialog self)
+    {
+        self.RemoveUIScrollItems(ref self.itemMailDic);
+    }
+
+ //ItemSysyem  新建个脚本SItem_MailInfoSystem.cs
+     [FriendOf(typeof(Scroll_SItem_MailInfo))]
+    public static class SItem_MailInfoSystem
+    {
+        public static void SetMainInfo(this Scroll_SItem_MailInfo self, int mailId)//页面指定的方法
+        {
+            self.DataId = mailId;
+            self.E_titleText.text = $"标题{mailId}";
+            var button = self.uiTransform.GetComponent<Button>();
+            button.onClick.RemoveAllListeners();  // 若想点击对 先清掉旧的
+            button.onClick.AddListener(() =>
+            {
+                Debug.Log($"点击了AA--{self.DataId} {mailId}");    
+            });
+        }
+    }   
+
+``` 
