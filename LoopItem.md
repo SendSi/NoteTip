@@ -143,7 +143,7 @@ private const string UISItemPrefix = "SItem";//LoopScollItem//最后加句
 prefab是以SItem开头  生成代码
 UnityEditor里 搜索ItemPrefabs 加入新的文件夹SItem
 
-示例
+示例1
 名字为 SItem_MailInfo   (水平的)
 - 在目标prefab里,右键EUI/LoopHorizontalScrollRect...创建出来,看属性面板填入PrefabName
 - 新建的SItem_MailInfo.prefab 这个SItem里要加个组件LayoutElement,使用PreferredWidth选项,右键SpawnEUICode,生成代码
@@ -190,3 +190,246 @@ System里在RegisterUIEvent方法里加入代码
     }   
 
 ``` 
+
+示例2
+- 背包 DlgBagMainSystem.cs     DlgBagMain.cs    SItem_BagSystem.cs
+```
+[ComponentOf(typeof(EUI.UIBaseWindow))]
+public class DlgBagMain : Entity, IAwake, EUI.IUILogic
+{
+    public DlgBagMainViewComponent View { get => this.GetParentComponent<DlgBagMainViewComponent>(); }
+
+    public Dictionary<int, Scroll_SItem_Bag> bagItemDic = new Dictionary<int, Scroll_SItem_Bag>();
+    public UserItemComponent userItemComponent;
+    public Dictionary<int, int> itemDtoDic = new Dictionary<int, int>();//背包数据
+    public List<int> itemIdList = new List<int>(); // 按索引取 itemId 用
+}
+```
+```
+using System.Collections.Generic;
+using ET.Client.EUI;
+using UnityEngine;
+
+namespace ET.Client
+{
+	[FriendOf(typeof(DlgBagMain))]
+	[FriendOf(typeof(Scroll_SItem_Bag))]
+	public static class DlgBagMainSystem
+	{
+		public static void RegisterUIEvent(this DlgBagMain self)
+		{
+			self.View.E_CloseBtnButton.onClick.AddListener(() => self.OnBtnCloseClick());
+			self.View.ELoopScrollList_BagLoopVerticalScrollRect.AddItemRefreshListener((Transform trans, int idx) =>
+			{
+				self.OnLoopScrollList_BagItemRefresh(trans, idx);
+			});
+		}
+
+		public static void OnLoopScrollList_BagItemRefresh(this DlgBagMain self, Transform trans, int idx)
+		{
+			var item = self.bagItemDic[idx].BindTrans(trans);
+			int itemId = self.itemIdList[idx];
+			int itemCount = self.itemDtoDic[itemId];
+			item.SetInfo(idx, itemId, itemCount);
+		}
+		public static void OnBtnCloseClick(this DlgBagMain self)
+		{
+			self.ClientScene().CurrentScene().GetComponent<EUI.UIComponent>().CloseWindow(WindowID.WindowID_BagMain);
+		}
+
+		public static void ShowWindow(this DlgBagMain self, Entity contextData = null)
+		{
+			self.userItemComponent = self.ClientScene().GetComponent<UserItemComponent>();
+			self.SetBagItems().Coroutine();
+		}
+
+		public static async ETTask SetBagItems(this DlgBagMain self)
+		{
+			self.itemDtoDic = await self.userItemComponent.GetUserItems();
+
+			// 把 itemId 存到 List 里，方便按 idx 访问
+			self.itemIdList = new List<int>(self.itemDtoDic.Keys);
+
+			self.AddUIScrollItems(ref self.bagItemDic, self.itemDtoDic.Count);
+			self.View.ELoopScrollList_BagLoopVerticalScrollRect.SetVisible(true, self.itemDtoDic.Count);
+		}
+
+		public static void HideWindow(this DlgBagMain self, Entity contextData = null)
+		{
+			self.RemoveUIScrollItems(ref self.bagItemDic);
+		}
+
+		#region 背包列表常用操作
+
+		/// <summary> 重建列表并全量刷新（数量变化时调用） </summary>
+		public static void RefreshBagList(this DlgBagMain self)
+		{
+			self.AddUIScrollItems(ref self.bagItemDic, self.itemDtoDic.Count);
+			self.View.ELoopScrollList_BagLoopVerticalScrollRect.SetVisible(true, self.itemDtoDic.Count);
+		}
+
+		/// <summary> 仅刷新当前可见 cell（数据变了但数量没变时用，不重建不跳位置） </summary>
+		public static void RefreshVisibleCells(this DlgBagMain self)
+		{
+			self.View.ELoopScrollList_BagLoopVerticalScrollRect.RefreshCells();
+		}
+
+		/// <summary> 滚动到指定 itemId 的位置 </summary>
+		public static void ScrollToItem(this DlgBagMain self, int itemId)
+		{
+			int idx = self.itemIdList.IndexOf(itemId);
+			if (idx < 0) return;
+			self.View.ELoopScrollList_BagLoopVerticalScrollRect.SrollToCell(idx, 0);
+		}
+
+		/// <summary> 滚动到指定索引 </summary>
+		public static void ScrollToIndex(this DlgBagMain self, int idx)
+		{
+			if (idx < 0 || idx >= self.itemDtoDic.Count) return;
+			self.View.ELoopScrollList_BagLoopVerticalScrollRect.SrollToCell(idx, 0);
+		}
+
+		/// <summary> 滚动到最后一项 </summary>
+		public static void ScrollToLast(this DlgBagMain self)
+		{
+			int lastIdx = self.itemDtoDic.Count - 1;
+			if (lastIdx < 0) return;
+			self.View.ELoopScrollList_BagLoopVerticalScrollRect.SrollToCell(lastIdx, 0);
+		}
+
+		/// <summary> 添加物品并刷新列表，自动滚到新物品位置 </summary>
+		public static void AddItem(this DlgBagMain self, int itemId, int count)
+		{
+			self.itemDtoDic[itemId] = count;
+			if (!self.itemIdList.Contains(itemId))
+				self.itemIdList.Add(itemId);
+
+			self.RefreshBagList();
+			self.ScrollToItem(itemId);
+		}
+
+		/// <summary> 移除物品并刷新列表 </summary>
+		public static void RemoveItem(this DlgBagMain self, int itemId)
+		{
+			self.itemDtoDic.Remove(itemId);
+			self.itemIdList.Remove(itemId);
+
+			self.RefreshBagList();
+		}
+
+		/// <summary> 更新物品数量并刷新（不重建 Entity，轻量刷新可见 cell） </summary>
+		public static void UpdateItemCount(this DlgBagMain self, int itemId, int count)
+		{
+			if (!self.itemDtoDic.ContainsKey(itemId)) return;
+			self.itemDtoDic[itemId] = count;
+			self.View.ELoopScrollList_BagLoopVerticalScrollRect.RefreshCells();
+		}
+
+		/// <summary>
+		/// 服务端推送道具数据变更入口。根据数量变化自动判断是局部刷新还是全量刷新：
+		/// - 已有物品数量变更（>0）→ 局部刷新可见 cell，不跳位置
+		/// - 已有物品数量归零 → 移除并全量刷新
+		/// - 新物品 → 添加到列表并全量刷新
+		/// </summary>
+		public static void OnServerItemChanged(this DlgBagMain self, int itemId, int newCount)
+		{
+			bool exists = self.itemDtoDic.ContainsKey(itemId);
+			if (exists)
+			{
+				// 已有物品
+				if (newCount > 0)
+				{
+					// 数量变更：只更新数据 + 局部刷新可见 cell，不重建列表
+					self.itemDtoDic[itemId] = newCount;
+					self.RefreshVisibleCells();
+				}
+				else
+				{
+					// 数量归零：移除
+					self.RemoveItem(itemId);
+				}
+			}
+			else
+			{
+				// 新物品
+				if (newCount > 0)
+				{
+					self.AddItem(itemId, newCount);
+				}
+				// newCount <= 0 的新物品直接忽略
+			}
+		}
+
+		/// <summary>
+		/// 服务端批量推送道具变更。
+		/// 先统计是否有数量增减，有则全量刷新，无则只局部刷新。
+		/// </summary>
+		public static void OnServerItemBatchChanged(this DlgBagMain self, Dictionary<int, int> changedItems)
+		{
+			bool countChanged = false;
+
+			foreach (var kv in changedItems)
+			{
+				bool exists = self.itemDtoDic.ContainsKey(kv.Key);
+				// 新增或移除 → 数量变了
+				if (!exists || kv.Value <= 0)
+				{
+					countChanged = true;
+					// 先更新数据，后续一起处理
+					if (kv.Value > 0)
+						self.itemDtoDic[kv.Key] = kv.Value;
+					else
+						self.itemDtoDic.Remove(kv.Key);
+				}
+				else
+				{
+					self.itemDtoDic[kv.Key] = kv.Value;
+				}
+			}
+
+			if (countChanged)
+			{
+				// 有增减 → 重建 itemIdList + 全量刷新
+				self.itemIdList = new List<int>(self.itemDtoDic.Keys);
+				self.RefreshBagList();
+			}
+			else
+			{
+				// 纯数量变化 → 局部刷新可见 cell
+				self.RefreshVisibleCells();
+			}
+		}
+		#endregion
+	}
+}
+```
+```
+using UnityEngine;
+using UnityEngine.UI;
+namespace ET.Client
+{
+    [FriendOf(typeof(Scroll_SItem_Bag))]
+    public static class SItem_BagSystem
+    {
+        public static void SetInfo(this Scroll_SItem_Bag self, int idx, int itemId, int count)
+        {
+            self.DataId = itemId;
+            self.Index = idx;
+
+            if (ItemConfigCategory.Instance.TryGet(itemId, out ItemConfig config))
+            {
+                self.E_IconImage.SetImgSpriteAsync(config.ItemTexture).Coroutine();
+                self.E_text_has_numText.text = count.ToString();
+                self.E_QualityImage.sprite = AssistantUtils.GetQualitySprite(config.ItemQuality);
+            }
+
+            var button = self.uiTransform.GetComponent<Button>();
+            button.onClick.RemoveAllListeners();  // 先清掉旧的
+            button.onClick.AddListener(() =>
+            {
+                Debug.Log($"点击了AA--{self.DataId} {self.Index}");
+            });
+        }
+    }
+}
+```
